@@ -1,2 +1,2 @@
 # Sudoku_Solver
- It's a Sudoku Solver
+ It's a Simple Sudoku Solver
