@@ -2,13 +2,12 @@
 #include <fstream>
 #include <string>
 #include <stdio.h>
-
+#define N 9
 using namespace std;
 
 
-int size = 9;
-int puzzle[9][9];
 
+int grid[N][N];
 
 /**
  * Gets the puzzle input from the .txt file
@@ -23,7 +22,7 @@ void getInput(){
             string num;
             for(int i = 0; i < 9; i++){
                 num = line.substr(i, 1);
-                puzzle[rowSize][colSize] = stoi(num);
+                grid[rowSize][colSize] = stoi(num);
                 colSize++;
             }
             colSize = 0;
@@ -36,12 +35,12 @@ void getInput(){
  * Prints out the board in a 3x3 grid
 **/
 void printGrid(){
-    for (int row = 0; row < size; row++){
-        for (int col = 0; col < size; col++){
+    for (int row = 0; row < N; row++){
+        for (int col = 0; col < N; col++){
             if(col == 3 || col == 6){
                 cout << "| ";
             } 
-            cout << puzzle[row][col] << " ";
+            cout << grid[row][col] << " ";
         }
         if(row == 2 || row == 5){
             cout << endl;
@@ -53,113 +52,69 @@ void printGrid(){
     }
 }
 
-/**
- * 
- * @param find    the number that you are looking to find
- * @param col     the column you are looking at
- * @returns bool  returns true if the number is present in the col
-**/
-bool isPresentInCol(int find, int col){
-    for(int row = 0; row < size; row++){
-        if(puzzle[row][col] == find){
+
+bool isPresentInCol(int col, int num){ //check whether num is present in col or not
+   for (int row = 0; row < N; row++)
+      if (grid[row][col] == num)
+         return true;
+   return false;
+}
+
+
+bool isPresentInRow(int row, int num){ //check whether num is present in row or not
+   for (int col = 0; col < N; col++)
+      if (grid[row][col] == num)
+         return true;
+   return false;
+}
+
+
+bool isPresentInBox(int boxStartRow, int boxStartCol, int num){
+//check whether num is present in 3x3 box or not
+   for (int row = 0; row < 3; row++)
+      for (int col = 0; col < 3; col++)
+         if (grid[row+boxStartRow][col+boxStartCol] == num)
             return true;
-        }
-    }
-    return false;
+   return false;
 }
 
-/**
- *
- * @param find    the number that you are looking to find
- * @param row     the row you are looking at
- * @returns bool  returns true if the number is present in the row 
-**/
-bool isPresentInRow(int find, int row){
-    for(int col = 0; col < size; col++){
-        if(puzzle[row][col] == find){
+
+bool findEmptyPlace(int &row, int &col){ //get empty location and update row and column
+   for (row = 0; row < N; row++)
+      for (col = 0; col < N; col++)
+         if (grid[row][col] == 0) //marked with 0 is empty
             return true;
-        }
-    }
-    return false;
-}
-
-/**
- *
- * @param find       the number that you are looking to find
- * @param rowStart   the row you are looking at
- * @param colStart   the col you are looking at
- * @returns bool     returns true if the number is present in the 3x3 grid space 
-**/
-bool isPresentIn3x3(int find, int rowStart, int colStart){
-    for(int row = 0; row < 3; row++){
-        for(int col = 0; col < 3; col++){
-            if(puzzle[row+rowStart][col+colStart] == find){
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-/**
- *
- * @param find   the number that you are looking to find
- * @param row    the row you are looking at
- * @param col    the col you are looking at
- * @return bool  returns true if the number can be put in the grid space
-**/
-bool isValid(int find, int row, int col){
-    if(!isPresentInRow(find, row) && 
-       !isPresentInCol(find, col) &&
-       !isPresentIn3x3(find, row - row%3, col - col%3)){
-       return true; 
-    }
-    return false;
-}
-
-/**
- *
- * @param row    passed by reference to update the newest location of an empty row
- * @param col    passed by reference to update the newest location of an empty col
- * @return bool  returns true if the grid space is empty
-**/
-bool isEmpty(int &row, int &col){
-    for(int row = 0; row < size; row++){
-        for(int col = 0; col < size; col++){
-            if(puzzle[row][col] == 0){
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-bool solve(){
-    int row;
-    int col;
-    if(!isEmpty(row, col)){
-        return true;
-    }
-    for(int find = 1; find <= 9; find++){
-        if(isValid(find, row, col)){
-            puzzle[row][col] = find;
-            if(solve()){
-                return true;
-            }
-            puzzle[row][col] = 0;
-        }
-    }
-    return false;
+   return false;
 }
 
 
+bool isValidPlace(int row, int col, int num){
+   //when item not found in col, row and current 3x3 box
+   return !isPresentInRow(row, num) && !isPresentInCol(col, num) && !isPresentInBox(row - row%3 ,
+col - col%3, num);
+}
 
+
+bool solveSudoku(){
+   int row, col;
+   if (!findEmptyPlace(row, col))
+      return true; //when all places are filled
+   for (int num = 1; num <= 9; num++){ //valid numbers are 1 - 9
+      if (isValidPlace(row, col, num)){ //check validation, if yes, put the number in the grid
+         grid[row][col] = num;
+         if (solveSudoku()) //recursively go for other rooms in the grid
+            return true;
+         grid[row][col] = 0; //turn to unassigned space when conditions are not satisfied
+      }
+   }
+   return false;
+}
 
 int main(){
     getInput();
     cout << "Before solving:" << endl;
     printGrid();
-    if(solve() == true){
+    if(solveSudoku() == true){
         cout << endl << "After" << endl;
         printGrid();
     }
